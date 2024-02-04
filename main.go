@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"strconv"
 
 	"github.com/mongodb/mongo-go-driver/x/bsonx"
 	"github.com/mongodb/mongo-go-driver/x/network/address"
@@ -159,6 +160,21 @@ func homeDir() string {
 	return os.Getenv("USERPROFILE") // windows
 }
 
+func waitUntilReady() int {
+	// Wait time in seconds
+	if w := os.Getenv("WAIT"); w != "" {
+		i, err := strconv.Atoi(w)
+		if err != nil {
+			// ... handle error
+			panic(err)
+		}
+		time.Sleep(i * time.Second)
+		return 0
+	}
+
+	return 0
+}
+
 func (l *Labeler) getMongoPrimary() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -203,6 +219,8 @@ func main() {
 	}
 	logrus.SetLevel(labeler.Config.LogLevel)
 	logrus.Infof("Setting logging level to %s", labeler.Config.LogLevel.String())
+
+	waitUntilReady
 
 	ticker := time.NewTicker(5 * time.Second).C
 	done := make(chan bool)
